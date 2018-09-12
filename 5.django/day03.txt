@@ -1,0 +1,293 @@
+补充昨天内容
+# F() 用法类似于Q()
+    # 查询语文成绩比数学成绩低10分的学生信息
+    # seelct * from student where math - 10 > chinses
+    stus = Student.objects.filter(math__gt=F('chinese') + 10)
+
+
+
+
+今天的主要内容是模型设计概念：一对一、一对多、多对多
+
+
+首先先创建一个学生student的数据表
+在models.py中添加student模型
+
+class Student(models.Model):
+
+    s_name = models.CharField(max_length=10, unique=True, verbose_name='姓名')
+
+    s_age = models.IntegerField(default=16, verbose_name='年龄')
+
+    s_sex = models.BooleanField(default=1, verbose_name='性别')
+
+    # 创建时间
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    # 操作时间（对数据进行操作时的时间）
+    operate_time = models.DateTimeField(auto_now=True, verbose_name='修改时间')
+
+    # 数学成绩
+    math = models.DecimalField(max_digits=4, decimal_places=2, null=True)
+    # 语文成绩
+    chinese = models.DecimalField(max_digits=4, decimal_places=2, null=True)
+
+    class Meta:
+        db_table = 'student'
+
+
+一、一对一模型
+
+先添加一个学生信息拓展的数据表student_info
+class StudentInfo(models.Model):
+    # 电话号码
+    phone = models.CharField(max_length=11, unique=True, null=True, verbose_name='手机号')
+
+    # 地址
+    address = models.CharField(max_length=50, null=True, verbose_name='家庭住址')
+
+
+
+    class Meta:
+        db_table = 'student_info'
+
+然后在student或者student_info模型中添加一对一关系
+    # 一对一模型
+    stu_info = models.OneToOneField(StudentInfo, null=True, related_name='stu')
+
+接下来是添加学生表数据（student）和学生信息拓展表数据(studnet_info)
+
+首先先在urls.py中添加路由
+url('create_stu/', views.create_stu),
+url('create_stu_info/', views.create_stu_info),
+
+然后是在views中添加数据
+student数据添加：
+def create_stu(request):
+
+    # 创建学生信息
+    # 引入ORM概念：对象关系映射
+    # 第一种方式
+    Student.objects.create(s_name='xxx')
+    Student.objects.create(s_name='xxx1')
+    Student.objects.create(s_name='xxx2')
+    Student.objects.create(s_name='xxx3')
+
+    return HttpResponse('创建学生方法')
+
+student_info数据添加：
+def create_stu_info(request):
+
+    if request.method == 'GET':
+        # 创建学生信息的拓展数据
+        StudentInfo.objects.create(phone='18200384770', address='成都')
+        StudentInfo.objects.create(phone='18267893456', address='北京')
+        StudentInfo.objects.create(phone='15777778888', address='上海')
+        StudentInfo.objects.create(phone='13566669999', address='重庆')
+
+        return HttpResponse('创建学生拓展信息')
+
+    if request.method == 'POST':
+        pass
+
+
+
+数据添加后添加两个表数据之间的一对一关系
+首先现在urls中添加url('stu_add_stuinfo/', views.stu_add_stuinfo),
+然后再views中添加对应关系
+def stu_add_stuinfo(request):
+
+    if request.method == 'GET':
+        # 给id为1的学生添加拓展表中id=2的信息，
+        stu1 = Student.objects.get(id=1)
+        # 绑定关系方法 1
+        stu1.stu_info_id = 1
+        stu1.save()
+
+        # 绑定关系方法 2
+        stu2 = Student.objects.get(id=2)
+        stu2.stu_info = StudentInfo.objects.get(id=2)
+        stu2.save()
+
+
+        stu3 = Student.objects.get(id=3)
+        stu3.stu_info_id = 3
+        stu3.save()
+
+        return HttpResponse('绑定学生信息')
+
+
+最后就可以通过对应关系来相互查找
+
+通过学生获取手机号
+首先现在urls中添加url('sel_phone_by_stu/', views.sel_phone_by_stu),
+然后再views中通过对应关系查找
+
+def sel_phone_by_stu(request):
+
+    if request.method == 'GET':
+        # 获取id=2的学生的手机号
+        # 方法1：
+        stu = Student.objects.filter(id=2)
+        info_id = stu.stu_info_id
+        stu_info = StudentInfo.objects.get(id=info_id)
+        phone = stu_info.phone
+
+        # 方法2：
+        stu = Student.objects.get(id=2)
+        stu_info = stu.stu_info
+        phone = stu_info.phone
+
+        print(phone)
+
+        return HttpResponse('通过学生查手机号')
+
+
+
+
+通过手机号查找对应学生
+首先现在urls中添加url('sel_stu_by_phone/', views.sel_stu_by_phone),
+然后再views中通过对应关系查找
+
+def sel_stu_by_phone(request):
+
+    if request.method == 'GET':
+        # 通过手机号查学生 15777778888
+        stu_info = StudentInfo.objects.get(phone='15777778888')
+        # stu_info.student和stu_info.stu只能用一个
+        stu = stu_info.stu
+        s_name = stu.s_name
+        print(s_name)
+
+        return HttpResponse('通过手机号查学生信息')
+
+
+
+二、一对多模型
+
+先创建一个班级模型来与学生模型生成一对多模型
+class Grade(models.Model):
+
+    # 创建一个班级
+    g_name = models.CharField(max_length=10, unique=True, verbose_name='班级名称')
+
+    class Meta:
+        db_table = 'grade'
+
+
+然后在学生模型中添加一对多关系
+    # 一对多模型
+    g = models.ForeignKey(Grade, null=True, on_delete=models.SET_NULL, related_name='stu')
+
+接下来就是创建班级数据，创建班级表与学生表的对应关系，然后就可以通过对应关系相互查询
+先在urls中添加路由
+    url('create_grade/', views.create_grade),
+    # url('create_grade_stu/', views.create_grade_stu),
+    url('sel_grade_by_stu/', views.sel_grade_by_stu),
+
+然后再views中添加对应路由关系
+def create_grade(request):
+    # 创建班级
+    if request.method == 'GET':
+        Grade.objects.create(g_name='py1805')
+        Grade.objects.create(g_name='py1804')
+        Grade.objects.create(g_name='py1803')
+        Grade.objects.create(g_name='py1802')
+        Grade.objects.create(g_name='py1801')
+
+        return HttpResponse('创建班级')
+
+
+def sel_grade_by_stu(request):
+    # 班级与学生对查
+    if request.method == 'GET':
+        # 查询叫sm的学生对应的班级
+        stu = Student.objects.get(s_name='sm')
+        grade = stu.g
+        g_name = grade.g_name
+        print(g_name)
+
+        # 查询py1805班的学生人数和姓名
+        grades = Grade.objects.get(g_name='py1805')
+        # grades.student_set.all()和grades.stu.all()只能用一个
+        stus = grades.stu.all()
+
+        # 获取学生的姓名
+        stu_names = [stu.s_name for stu in stus]
+        print(stu_names)
+        print(len(stus))
+
+        return HttpResponse('查询成功')
+
+
+
+三、多对多模型
+首先添加一个课程表来与学生形成多对多模型
+class Course(models.Model):
+    c_name = models.CharField(max_length=10, null=True)
+
+    class Meta:
+        db_table = 'course'
+
+然后在student中添加多对多关系
+    # 多对多
+    c = models.ManyToManyField(Course, null=True)
+
+
+接下来就是添加课程表数据、创建多对多关系
+在urls中添加路由
+    url('create_course/', views.create_course),
+    url('create_stu_course/', views.create_stu_course),
+
+在views中创建路由
+def create_course(request):
+    # 添加课程信息
+    if request.method == 'GET':
+        courses = ['java', 'python', 'c++', 'h5', 'c']
+        for name in courses:
+            Course.objects.create(c_name=name)
+
+        return HttpResponse('课程创建成功')
+
+
+def create_stu_course(request):
+    # 创建学生与课程的对应关系
+    if request.method == 'GET':
+        # 添加学生对应的课程信息
+        # 让id=2的学生选择课程（id=1，2）
+        stu = Student.objects.get(id=2)
+        # 添加add()方法
+        stu.c.add(1)
+        stu.c.add(2)
+
+        # 添加课程c++的和学生id=1，4的关系
+        cour = Course.objects.get(c_name='c++')
+
+        # 添加add()
+        cour.student_set.add(1)
+        cour.student_set.add(4)
+
+        # 删除id=2的学生选的id=2的课程
+        stu.c.remove(2)
+
+
+        return HttpResponse('创建学生与课程关系成功')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
