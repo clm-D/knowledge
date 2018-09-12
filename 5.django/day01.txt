@@ -1,0 +1,112 @@
+vnc:
+账号：administuator
+密码：wang135588
+
+
+1、web前端的几大框架
+Django、flask、tornado、twisted、sanic
+
+2、mvc模式
+模型（model）-视图（view）-控制器（controller）
+
+3、virtualenv 安装
+pip install virtualenv
+查看
+virtualenv
+
+
+4、创建虚拟环境
+进入存放虚拟环境的文件夹
+virtualen -p (python 版本的.exe文件的绝对路径) --no-site-package djenv5(虚拟环境名字)
+进入 cd env/Scripts/djenv5 再activate
+退出 deactivate
+
+5、创建Django的项目
+加载Django和PyMySQL
+pip install Django==1.11(python 3.6的)--（如果是使用python3.7的就下载2.1版本的Django）
+pip install PyMySQL
+进入5.django中创建项目
+django-admin startproject 名字（day01）
+
+
+6、pychar操作
+开启服务
+python manage.py runserver
+
+
+在init.py中导入
+import pymysql
+pymysql.install_as_MySQLdb()
+
+
+
+
+修改settins.py
+先在 INSTALLED_APPS 中添加 'app'
+然后修改 DATABASES 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dj5',
+        'USER': 'root',
+        'PASSWORD': '1234',
+        'HOST': '127.0.0.1',
+        'PORT': 3306
+    }
+}
+注：LANGUAGE_CODE = 'zh-hans' 修改页面语言，改成中文
+
+
+
+创建应用，添加app
+python manage.py startapp app(名字)
+
+
+生成数据库文件
+python manage.py makemigrations
+数据库绑定（迁移数据库）
+python manage.py migrate
+
+
+创建超级用户
+python manage.py createsuperuser
+
+
+创建学生表（在models.py中）
+from django.db import models
+
+# Create your models here.
+
+
+class Student(models.Model):
+
+    # 姓名长度最大10，不能重复
+    s_name = models.CharField(max_length=10, unique=True)
+
+    s_age = models.IntegerField(default=16)
+
+    class Meta:
+        db_table = 'student'
+
+
+然后创建后台学生操作
+from django.contrib import admin
+
+# Register your models here.
+from app.models import Student
+
+
+class StudentAdmin(admin.ModelAdmin):
+    # 修改管理后台展示列表的字段
+    list_display = ['id', 's_name', 's_age']
+
+    # 按照年龄过滤
+    list_filter = ['s_age']
+
+    # 搜索
+    search_fields = ['s_name']
+
+    # 分页
+    list_per_page = 2
+
+admin.site.register(Student, StudentAdmin)
