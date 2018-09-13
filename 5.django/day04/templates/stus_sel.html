@@ -11,6 +11,21 @@
     id:{{ student.id }}<br>
     姓名：{{ student.s_name }}<br>
     年龄：{{ student.s_age }}<br>
+    性别：{% if student.s_sex %}男{% else %}女{% endif %}<br>
+    math: {{ student.math }}<br>
+    chinese: {{ student.chinese }}<br>
+    电话：{{ student.stu_info.phone }}<br>
+    家庭住址：{{ student.stu_info.address }}<br>
+    班级：{{ student.g.g_name}}<br>
+    课程：
+            {% if courses %}
+                {% for c in courses %}
+                    {{ c.c_name }},
+                {% endfor %}
+            {% else %}
+                空
+            {% endif %}
+    <br>
     <a href="{% url 'app:index' %}">返回</a>
 
 

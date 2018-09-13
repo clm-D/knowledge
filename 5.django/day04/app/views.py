@@ -33,4 +33,4 @@ def del_stu(request, s_id):
 def sel_stu(request, s_id):
     if request.method == 'GET':
         stu = Student.objects.filter(id=s_id).first()
-        return render(request, 'stus_sel.html', {'student': stu})
+        return render(request, 'stus_sel.html', {'student': stu, 'courses': stu.c.all()})

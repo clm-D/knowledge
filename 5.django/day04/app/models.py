@@ -52,10 +52,10 @@ class Student(models.Model):
     chinese = models.DecimalField(max_digits=4, decimal_places=2, null=True)
 
     # 一对一模型
-    stu_info = models.OneToOneField(StudentInfo, null=True, related_name='stu')
+    stu_info = models.OneToOneField(StudentInfo, null=True)
 
     # 一对多模型
-    g = models.ForeignKey(Grade, null=True, on_delete=models.SET_NULL, related_name='stu')
+    g = models.ForeignKey(Grade, null=True, on_delete=models.SET_NULL)
 
     # 多对多
     c = models.ManyToManyField(Course, null=True)
