@@ -1,0 +1,245 @@
+今天的主要内容是学习MVT中的T模块
+
+一、T模块简单学习
+首先先创建一个T模块的文件templates(名字固定)
+然后在setting.py中的TEMPLATES中把'DIRS'修改到对应的templates的连接
+'DIRS': [os.path.join(BASE_DIR, 'templates')],
+
+然后在urls.py中添加app的路由（这里的路由和之前的不一样了）
+url(r'app/', include('app.urls', namespace='app')),
+并且在app中也添加一个urls.py文件
+
+from django.conf.urls import url, include
+
+from app import views
+urlpatterns = [
+    url(r'^stu/', views.index, name='index'),
+]
+
+接下来就是将models.py中的数据模型配置好，使用之前的就行
+
+然后就是在views.py中添加对应的路由
+
+
+def index(request):
+    if request.method == 'GET':
+        stus = Student.objects.all()
+
+	# 数据的传递，将数据传递到页面中
+        # return render(request, 'stus.html', {'students': stus})
+        return render(request, 'index.html', {'students': stus})
+        # return HttpResponse('hello')
+
+
+然后就是在templates中创建index.html文件
+接收数据使用{{ students }}来接收
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+</head>
+<body>
+    <div>学生表</div>
+    <!--{{students }}-->
+    <table border="1" >
+        <thead>
+        <th>序号</th>
+        <th>id</th>
+        <th>姓名</th>
+        <th>年龄</th>
+        </thead>
+        <tbody>
+
+            {% for stu in students %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ stu.id }}</td>
+                    <!--<td {% if stu.id == 2 %} style="color:red;" {% endif %}>-->
+                        <!--{{ stu.s_name }}-->
+                    <!--</td>-->
+
+                    {# 单行注释 djoasjfa {% if %} #}
+                    <!--多行注释-->
+                    {% comment %}
+                    <td {% if stu.id == 2 %} style="color:red;" {% endif %}>
+                        {{ stu.s_name }}
+                    </td>
+                    {% endcomment %}
+
+                    <!--forloop.first和forloop.last对应的数据为True，其余的为False-->
+                    <td {% if forloop.first %} style="color:red;" {% endif %}>
+                        {{ stu.s_name }}
+                    </td>
+
+                    <td {% ifequal stu.id 7 %} style="color:yellow;" {% endifequal %}>{{ stu.s_age }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+
+</body>
+</html>
+
+
+
+然后就是关于静态页面的数据（css、js和images），
+首先先创建一个static文件,再在里面添加css、js和images文件。
+前端要得到静态数据，就得通过外部连接来获取
+获取之前先要在setting.py中配置static的路由
+# 配置static访问路由
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+
+然后就可以在index的head中添加如下东西了：
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    <!--<link rel="stylesheet" href="/static/css/index.css">-->
+    <!--<script src="/static/js/xxx.js"></script>-->
+    <script src="{% static 'js/xxx.js' %}"></script>
+
+
+
+二、django中的模板简单使用
+首先创建一个模板base.html的父文件
+然后在父文件中埋坑
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+    {% block extCss %}
+    {% endblock %}
+
+    {% block extJs %}
+    {% endblock %}
+</head>
+<body>
+    {% block content%}
+    {% endblock %}
+
+</body>
+</html>
+
+然后再创建一个子模板base_main.html
+父文件中只埋坑，所有东西的调用都只能在其它模块中
+子模板通{% extends 'base.html' %}来获取到父模板的内容
+
+{% extends 'base.html' %}
+
+{% block extJs %}
+    <!--填坑只能在子模板或者页面中，不能在父模板中-->
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+{% endblock %}
+
+创建一个stus.html的页面，来使用模板
+页面通{% extends 'base_main.html' %}来获取到子模板的内容
+
+{% extends 'base_main.html' %}
+
+{% block title %}
+    学生列表页面
+{% endblock %}
+
+{% block extCss %}
+    {{ block.super }}
+    <link rel="stylesheet" href="/static/css/stus.css">
+{% endblock %}
+
+{% block extJs %}
+    {{ block.super }}
+    <script src="/static/js/xxx.js" ></script>
+{% endblock %}
+
+
+{% block  content %}
+    <table>
+        <thead>
+        <th>序号</th>
+        <th>id</th>
+        <th>姓名</th>
+        <th>年龄</th>
+        <th>操作</th>
+        </thead>
+        <tbody>
+            {% for stu in students %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ stu.id }}</td>
+                    <td>{{ stu.s_name }}</td>
+                    <td>{{ stu.s_age }}</td>
+                    <td>
+                        <!--<a href="/app/del_stu/?id={{ stu.id }}">删除</a>-->
+                        <a href="{% url 'app:del_stu' stu.id %}">删除</a>
+                            |
+                        <a href="{% url 'app:sel_stu' stu.id%}">查看</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+
+在页面中添加数据操作：先要在页面中添加路由（如上面的代码）
+然后再app的urls中也添加对应的路由
+    # url(r'^del_stu/(\d+)/', views.del_stu, name='del_stu'),
+    url(r'^del_stu/(?P<s_id>\d+)/', views.del_stu, name='del_stu'),
+
+    url(r'sel_stu/(?P<s_id>\d+)/', views.sel_stu, name='sel_stu'),
+
+
+接下来就是在views.py中来创建路由和数据操作了
+
+def del_stu(request, s_id):
+    if request.method == 'GET':
+        # 删除方法
+        # 1.获取url中的id值
+        # id = request.GET.get('id')
+        # 2.获取id对应的学生对象
+        stu = Student.objects.get(pk=s_id)
+        # 3.对象.delect()
+        stu.delete()
+
+        return HttpResponseRedirect(reverse('app:index'))
+        # return HttpResponseRedirect('/app/stu/')
+
+
+def sel_stu(request, s_id):
+    if request.method == 'GET':
+        stu = Student.objects.filter(id=s_id).first()
+        return render(request, 'stus_sel.html', {'student': stu})
+
+
+然后再创建一个stus_sel.html的文件来显示查看学生的信息
+
+{% extends 'base_main.html' %}
+
+{% block title %}
+    查看学生
+{% endblock %}
+
+
+{% block content %}
+
+    id:{{ student.id }}<br>
+    姓名：{{ student.s_name }}<br>
+    年龄：{{ student.s_age }}<br>
+    <a href="{% url 'app:index' %}">返回</a>
+
+
+{% endblock %}
+
+
+
+
+
+

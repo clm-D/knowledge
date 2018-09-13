@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    <!--<link rel="stylesheet" href="/static/css/index.css">-->
+    <!--<script src="/static/js/xxx.js"></script>-->
+    <script src="{% static 'js/xxx.js' %}"></script>
+
+</head>
+<body>
+    <div>学生表</div>
+    <!--{{students }}-->
+    <table border="1" >
+        <thead>
+        <th>序号</th>
+        <th>id</th>
+        <th>姓名</th>
+        <th>年龄</th>
+        </thead>
+        <tbody>
+
+            {% for stu in students %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ stu.id }}</td>
+                    <!--<td {% if stu.id == 2 %} style="color:red;" {% endif %}>-->
+                        <!--{{ stu.s_name }}-->
+                    <!--</td>-->
+
+                    {# 单行注释 djoasjfa {% if %} #}
+                    <!--多行注释-->
+                    {% comment %}
+                    <td {% if stu.id == 2 %} style="color:red;" {% endif %}>
+                        {{ stu.s_name }}
+                    </td>
+                    {% endcomment %}
+
+                    <!--forloop.first和forloop.last对应的数据为True，其余的为False-->
+                    <td {% if forloop.first %} style="color:red;" {% endif %}>
+                        {{ stu.s_name }}
+                    </td>
+
+                    <td {% ifequal stu.id 7 %} style="color:yellow;" {% endifequal %}>{{ stu.s_age }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+
+
+</body>
+</html>

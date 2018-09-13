@@ -1,0 +1,17 @@
+
+{% extends 'base_main.html' %}
+
+{% block title %}
+    查看学生
+{% endblock %}
+
+
+{% block content %}
+
+    id:{{ student.id }}<br>
+    姓名：{{ student.s_name }}<br>
+    年龄：{{ student.s_age }}<br>
+    <a href="{% url 'app:index' %}">返回</a>
+
+
+{% endblock %}

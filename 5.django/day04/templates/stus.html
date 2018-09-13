@@ -1,0 +1,45 @@
+
+{% extends 'base_main.html' %}
+
+{% block title %}
+    学生列表页面
+{% endblock %}
+
+{% block extCss %}
+    {{ block.super }}
+    <link rel="stylesheet" href="/static/css/stus.css">
+{% endblock %}
+
+{% block extJs %}
+    {{ block.super }}
+    <script src="/static/js/xxx.js" ></script>
+{% endblock %}
+
+
+{% block  content %}
+    <table>
+        <thead>
+        <th>序号</th>
+        <th>id</th>
+        <th>姓名</th>
+        <th>年龄</th>
+        <th>操作</th>
+        </thead>
+        <tbody>
+            {% for stu in students %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ stu.id }}</td>
+                    <td>{{ stu.s_name }}</td>
+                    <td>{{ stu.s_age }}</td>
+                    <td>
+                        <!--<a href="/app/del_stu/?id={{ stu.id }}">删除</a>-->
+                        <a href="{% url 'app:del_stu' stu.id %}">删除</a>
+                            |
+                        <a href="{% url 'app:sel_stu' stu.id%}">查看</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
