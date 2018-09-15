@@ -1,0 +1,283 @@
+
+day05:今天的主要内容是学习制作网页的注册、登录和注销
+
+准备工作，先将项目创建好，数据库及（models.py）模型使用之前的
+
+不同的地方：setting.py的MIDDLEWARE的第四行注释掉（注册的时候会有问题），不使用
+
+"""
+导入包的规则：
+1.先引入python的自带的库
+
+2.再引入第三方
+
+3.最后引入自定义的
+"""
+
+一、网页的注册
+
+首先先在templates中添加注册页面
+先创建模板base.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>
+    {% block title %}
+    {% endblock %}
+  </title>
+  {% block extCss %}
+  {% endblock %}
+
+  {% block extJs %}
+  {% endblock %}
+</head>
+<body>
+    {% block content %}
+    {% endblock %}
+
+</body>
+</html>
+
+然后创建注册页面register.html，调用模板页面的模板
+
+{% extends 'base.html' %}
+
+{% block title %}
+    注册
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+        {{ form.errors.username }}
+        <p>姓名：<input type="text" name="username"></p>
+        {{ form.errors.password }}
+        <p>密码：<input type="password" name="password"></p>
+        {{ form.errors.password2 }}
+        <p>确认密码：<input type="password" name="password2"></p>
+        <input type="submit" value="提交">
+    </form>
+{% endblock %}
+
+
+
+然后给app添加一个urls.py文件并在里面添加注册的路由
+
+from django.conf.urls import url
+from django.contrib.auth.decorators import login_required
+
+from app import views
+
+urlpatterns = [
+    # url(r'^'),
+    # 注册
+    url(r'^register/', views.register, name='register'),
+]
+
+
+最后就是创建一个路由（在views.py中）以及实现注册功能
+
+def register(request):
+    if request.method == 'GET':
+        return render(request, 'register.html')
+
+    if request.method == 'POST':
+        # 校验页面中传递的参数是否正确完整
+        form = UserForm(request.POST)
+        # username = request.POST.get('username')
+        # is_valid()：判断表单是否验证通过
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            password2 = form.cleaned_data.get('password2')
+
+            User.objects.create_user(username=username, password=password)
+            return HttpResponseRedirect(reverse('app:login'))
+            # # 验证密码是否一致
+            # if password == password2:
+            #     # 创建普通用户
+            #     User.objects.create_user(username=username, password=password)
+            #     return render(request, 'register.html')
+            # else:
+            #     return render(request, 'register.html')
+        else:
+            return render(request, 'register.html', {'form': form})
+
+在实现注册时会用到表单的校验，一般不写在view.py中，而是创建一个froms.py来写表单的验证
+
+from django import forms
+from django.contrib.auth.models import User
+
+
+class UserForm(forms.Form):
+    """
+    校验注册信息
+    """
+    username = forms.CharField(required=True, max_length=5, min_length=2, error_messages={'required': '用户名必填', 'max_length': '用户名不能超过5个字符', 'min_length': '用户名不能低于2个字符'})
+    password = forms.CharField(required=True, min_length=4, error_messages={'required': '密码必填', 'min_length': '密码不能少于4位'})
+    password2 = forms.CharField(required=True, min_length=4, error_messages={'required': '确认密码必填', 'min_length': '确认密码不能少于4位'})
+
+    def clean(self):
+        # 校验用户名是否已经注册过
+        user = User.objects.filter(username=self.cleaned_data.get('username'))
+        if user:
+            # 如果已经注册过
+            raise forms.ValidationError({'username': '用户名已存在，请重新输入'})
+            pass
+
+        if self.cleaned_data.get('password') != self.cleaned_data.get('password2'):
+            raise forms.ValidationError({'password': '两次密码不一致'})
+            pass
+        # 教育密码和确认密码是否相同
+        return self.cleaned_data
+
+
+
+重点：1：校验表单信息是否有内容，如果不正确并且提示，使用django自带的forms验证；
+      2：判断用户是否已经注册,创建的clean内部函数，通过cleaned_data来验证
+      3：路由中判断是否验证通过，使用form.is_valid()来验证
+
+
+二、网页的登录
+首先先创建一个登录界面，使用base的模板
+
+{% extends 'base.html' %}
+
+{% block title %}
+    登录
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+        {{ form.errors.username }}
+        <p>姓名：<input type="text" name="username"></p>
+        {{ form.errors.password }}
+        {{ error }}
+        <p>密码：<input type="password" name="password"></p>
+        <input type="submit" value="提交">
+    </form>
+{% endblock %}
+
+
+然后是在urls中创建路由，在urlpatterns中添加路由
+
+    # 登录
+    url(r'^login/', views.login, name='login'),
+
+
+接下来是写路由的具体事件和登录功能（views.py）
+
+def login(request):
+    if request.method == 'GET':
+        return render(request, 'login.html')
+
+    if request.method == 'POST':
+        # 表单验证，用户名和密码是否填写，用户是否存在
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            # 校验用户名和密码，判断返回的对象是否为空，如果不为空，则为user对象
+            user = auth.authenticate(username = form.cleaned_data['username'], password = form.cleaned_data['password'])
+            if user:
+                # 用户名和密码正确，则登录
+                auth.login(request, user)
+                return HttpResponseRedirect(reverse('app:index'))
+            else:
+                # 密码不正确
+                return render(request, 'login.html', {'error': '密码错误'})
+        else:
+            return render(request, 'login.html', {'form': form})
+
+同样的，在登录时会有表单验证，在forms.py中添加登录的表单验证
+
+class LoginForm(forms.Form):
+    """
+    校验登录信息
+    """
+    username = forms.CharField(required=True, max_length=5, min_length=2, error_messages={'required': '用户名必填', 'max_length': '用户名不能超过5个字符', 'min_length': '用户名不能低于2个字符'})
+    password = forms.CharField(required=True, min_length=4, error_messages={'required': '密码必填', 'min_length': '密码不能少于4位'})
+
+    def clean(self):
+        user = User.objects.filter(username=self.cleaned_data.get('username'))
+        # 校验用户是否存在
+        if not user and self.cleaned_data.get('username'):
+            raise forms.ValidationError({'username': '用户名不存在，请先注册再登录'})
+        # else:
+        #     # 校验密码是否正确
+        #     if user.password != self.cleaned_data.get('password'):
+        #         raise forms.ValidationError({'password': '用户密码不正确，请重新输入'})
+
+        return self.cleaned_data
+
+
+重点：1、表单信息验证通注册一样；
+      2、校验用户是否正确：使用django自带的auth包，其中用到了两个功能authenticate和login
+	# 校验用户名和密码，判断返回的对象是否为空，如果不为空，则为user对象
+	user = auth.authenticate(username = form.cleaned_data['username'], password = form.cleaned_data['password'])
+            if user:
+                # 用户名和密码正确，则登录
+                auth.login(request, user)
+                return HttpResponseRedirect(reverse('app:index'))
+            else:
+                # 密码不正确
+                return render(request, 'login.html', {'error': '密码错误'})
+
+
+
+
+三、注销
+
+注销是用于退出登录的，先要登录才能注销，不过为了保证页面只能通过登录才能进入
+要在路由(urls.py)中添加django的一个校验登录的闭包login_required
+所以在写主页面的路由时要添加这个闭包，并使用
+
+    # 主页面,login_required来添加登录才能进入
+    url(r'^index/', login_required(views.index), name='index'),
+
+    # 注销
+    url(r'^logout/', login_required(views.logout), name='logout'),
+
+
+并且在setting.py的最后要添加没有登录的跳转
+
+# 没有登录，则跳转到登录
+LOGIN_URL = '/app/login/'
+
+
+主页面的设计，index.html
+
+{% extends 'base.html' %}
+
+{% block title %}
+    首页
+{% endblock %}
+
+{% block content %}
+    <p>我是首页，需要登录后才能访问</p>
+    <p><a href="{% url 'app:logout' %}">注销</a></p>
+{% endblock %}
+
+
+最后就是写主页面的路由以及注销功能
+
+def index(request):
+    if request.method == 'GET':
+        return render(request, 'index.html')
+
+
+def logout(request):
+    if request.method == 'GET':
+        # 注销
+        auth.logout(request)
+        return HttpResponseRedirect(reverse('app:login'))
+
+
+
+重点：1、闭包
+	上面时闭包：定义：函数中有内部函数，内部函数调用了外部函数的局部变量，并且外部函数返回的内容是内部函数
+      2、django自带的注销功能
+	使用auth.logout来注销页面
+
+
+
+
+
