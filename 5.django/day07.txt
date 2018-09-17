@@ -1,0 +1,192 @@
+
+今天讲的主要内容是自定义登录和注册（通过cookies和session）
+
+方法1：通过在路由中直接使用cookies等来进行验证
+方法2：通过闭包来实现
+方法3：通过中间件来实现
+
+准备工作基本内容和之前的一样，views中重新写
+
+首先写数据模型：models.py， 添加ticket表和users表并建立一对多关系
+
+from django.db import models
+
+
+class Users(models.Model):
+    username = models.CharField(max_length=10, unique=True)
+    password = models.CharField(max_length=255, verbose_name='密码')
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    operate_time = models.DateTimeField(auto_now=True, verbose_name='修改时间')
+
+    class Meta:
+        db_table = 'users'
+
+
+class UserTicket(models.Model):
+    user = models.ForeignKey(Users)
+    ticket = models.CharField(max_length=30)
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+
+    class Meta:
+        db_table = 'user_ticket'
+
+
+注册路由和之前一样
+
+登录与之前不同，要添加一个对应关系及ticket表的内容
+
+def login(request):
+    if request.method == 'GET':
+        return render(request, 'login.html')
+
+    if request.method == 'POST':
+        # 校验登录页面传递的参数
+        form = UserForm(request.POST)
+        # 使用is_valid()判断是否校验成功
+        if form.is_valid():
+            # 登录设置
+            # 1.通过用户名和密码获取当前的user对象===》》auth.authenticate()
+
+            user = Users.objects.filter(username=form.cleaned_data['username']).first()
+            if user:
+                # 可以通过username获取到对象
+                # 将 user.password和form.cleaned_data['password']进行校验
+                if check_password(form.cleaned_data['password'], user.password):
+                    # 校验用户名和密码都成功
+                    # 1.向cookies中设置随机参数ticket
+                    res = HttpResponseRedirect(reverse('app:index'))
+                    # set_cookie(key, value, max_age='', expires='')
+                    ticket = get_ticket()
+                    res.set_cookie('ticket', ticket, max_age=1000)
+                    # 2.向表user_ticket中存这个ticket和user的对应关系
+                    UserTicket.objects.create(user=user, ticket=ticket)
+                    return res
+                else:
+                    return render(request, 'login.html', {'error': '密码不正确'})
+
+            else:
+                # 登录系统的用户名不存在
+                return render(request, 'login.html', {'error': '用户名不存在'})
+
+            # 2.设置cookies中的随机值===>>>auth.login()
+            # 3.设置user_ticket中的随机值
+        else:
+            return render(request, 'login.html', {'form', form})
+
+
+
+主界面路由：
+
+方法1：直接在路由中添加验证
+def index(request):
+    if request.method == 'GET':
+        # 从cookies中拿ticket
+        ticket = request.COOKIES.get('ticket')
+        # 通过icket去user_ticket表中取数据
+        user_ticket = UserTicket.objects.filter(ticket=ticket).first()
+        if user_ticket:
+            # 获取当前登录系统的用户
+            user = user_ticket.user
+            return render(request, 'index.html', {'user': user})
+        else:
+            return HttpResponseRedirect(reverse('app:login'))
+        
+
+方法2：通过闭包来实现
+
+@is_login
+def index(request):
+    if request.method == 'GET':
+        return render(request, 'index.html')
+
+添加一个文件utils在其中添加一个__init__.py和functions.py
+在functions.py中添加闭包和添加一个login中得到随机ticket的函数
+
+
+import random
+
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+
+from app.models import UserTicket
+
+
+def get_ticket():
+    s = '1234567890qwertyuiopasdfghjklzxcvbnm'
+    ticket = ''
+    for i in range(25):
+        ticket += random.choice(s)
+    return ticket
+
+
+def is_login(func):
+
+    def check(request):
+        ticket = request.COOKIES.get('ticket')
+        # 如果cookie中存在设置的ticket则通过user_ticket表进行校验
+        if ticket:
+            # 通过user_ticket表获取对象
+            user_ticket = UserTicket.objects.filter(ticket=ticket).first()
+            if user_ticket:
+                return func(request)
+            else:
+                # ticket参数错误，则跳转到登录
+                return HttpResponseRedirect(reverse('app:login'))
+        else:
+            # 没有ticket就说明没有登录
+            return HttpResponseRedirect(reverse('app:login'))
+    return check
+
+
+方法3：通过中间件来实现
+
+在utils中添加一个UserAuthMiddleware.py
+
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.utils.deprecation import MiddlewareMixin
+
+from app.models import UserTicket
+
+
+class UserMiddleware(MiddlewareMixin):
+
+    # 重构拦截请求的方法
+    def process_request(self, request):
+
+        # 排除不需要登录验证的地址
+        not_login_path = ['/app/login/', '/app/register/']
+        path = request.path
+        # 校验不需要登录验证的地址
+        for n_path in not_login_path:
+            # 如果当前访问的地址为登录地址或者注册地址，则直接访问对应视图
+            if path == n_path:
+                return None
+
+        ticket = request.COOKIES.get('ticket')
+        # 如果请求的cookies中没有ticket,则跳转到登录
+        if not ticket:
+            return HttpResponseRedirect(reverse('app:login'))
+        # 通过ticket参数获取当前登录系统的用户信息
+        user_ticket = UserTicket.objects.filter(ticket=ticket).first()
+        if not user_ticket:
+            return HttpResponseRedirect(reverse('app:login'))
+        # 设置全局的user
+        request.user = user_ticket.user
+        # 中间件执行结束，可返回None或者不写
+        return None
+
+然后在seting.py中的MIDDLEWARE中添加
+'utils.UserAuthMiddleware.UserMiddleware',
+就行了
+
+
+
+
+
+
+
+
+
+
+

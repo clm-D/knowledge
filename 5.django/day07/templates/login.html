@@ -1,0 +1,19 @@
+
+
+{% extends 'base.html' %}
+
+{% block title %}
+    登录页面
+{% endblock %}
+
+{% block content %}
+    <form action="" method="post">
+        {{ error }}
+        {{ form.errors.username }}
+        <p>姓名：<input type="text" name="username"></p>
+        {{ form.errors.password }}
+        <p>密码：<input type="password" name="password"></p>
+        <p><input type="submit" value="登录"></p>
+    </form>
+
+{% endblock %}
