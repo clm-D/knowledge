@@ -1,0 +1,41 @@
+
+{% extends 'base.html' %}
+
+{% block title %}
+    用户管理
+{% endblock %}
+
+{% block content %}
+    <p>当前注册的账号</p>
+    <table>
+        <thead>
+            <th>id</th>
+            <th>用户名</th>
+            <th>创建时间</th>
+
+        </thead>
+        <tbody>
+            {% for user in page %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.create_time|date:'Y-m-d H:i:s' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p>当前页：{{ page.number }}</p>
+    <p>页码：
+        {% for i in page.paginator.page_range %}
+        <a href="{% url 'app:users' %}?page={{ i }}">{{ i }}</a>
+        {% endfor %}
+    </p>
+    <p>
+        {% if page.has_previous %}
+        <a href="{% url 'app:users' %}?page={{ page.previous_page_number }}">上一页</a>
+        {% endif %}
+        {% if page.has_next %}
+        <a href="{% url 'app:users' %}?page={{ page.next_page_number }}">下一页</a>
+        {% endif %}
+    </p>
+{% endblock %}

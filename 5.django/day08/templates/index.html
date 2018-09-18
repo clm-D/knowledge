@@ -1,0 +1,7 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <p>我是首页，我需要登录后才能访问</p>
+    <p><a href="{% url 'app:logout' %}">注销</a></p>
+{% endblock %}

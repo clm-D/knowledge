@@ -9,4 +9,8 @@ urlpatterns = [
     url(r'^login/', views.login, name='login'),
     # 首页
     url(r'^index/', views.index, name='index'),
+    # 注销
+    url(r'^logout/', views.logout, name='logout'),
+    # 用户管理
+    url(r'^users/', views.users, name='users'),
 ]

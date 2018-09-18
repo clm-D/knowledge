@@ -1,11 +1,17 @@
 
-
 import random
+import datetime
 
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from app.models import UserTicket
+
+
+# def is_timeout(user_ticket):
+#     # 1.获取当前时间
+#     now_time1 = datetime.datetime.now()
+#     now_time1_c = now_time1.timestamp()
 
 
 def get_ticket():
@@ -33,3 +39,15 @@ def is_login(func):
             # 没有ticket就说明没有登录
             return HttpResponseRedirect(reverse('app:login'))
     return check
+
+
+def is_logout(func):
+
+     def out(request):
+         ticket = request.COOKIES.get('ticket')
+
+         UserTicket.objects.filter(ticket=ticket).first().delete()
+
+         return func(request)
+
+     return out

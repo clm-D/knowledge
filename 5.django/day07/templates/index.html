@@ -4,4 +4,6 @@
 {% block content %}
     <p>我是首页，我需要登录后才能访问</p>
     <p>{{ user.username }}</p>
+    <p>头像：<img src="/media/{{ user.icon }}"></p>
+    <p><a href="{% url 'app:logout' %}">注销</a></p>
 {% endblock %}
