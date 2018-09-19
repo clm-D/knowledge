@@ -94,7 +94,8 @@ def users(request):
 
 二、图片上传
 
-在register.html中添加  <p>头像：<input type="file" name="icon"></p>
+pip install pillow
+在register.html中添加<form action="" method="post" enctype="multipart/form-data"> 和 <p>头像：<input type="file" name="icon"></p>
 
 
 在index.html中要获取图片需要添加  <p>头像：<img src="/media/{{ user.icon }}"></p>

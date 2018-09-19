@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<p>用户名：{{ user }}</p>
+
+<p>{{ perms_all.users }}</p>
+
+{% if perms_all.app.add_myuser %}
+
+<p>添加用户</p>
+
+{% endif %}
+<p>删除用户</p>
+<p>修改用户</p>
+<p>修改用户名</p>
+<p>修改用户密码</p>
+
+</body>
+</html>
