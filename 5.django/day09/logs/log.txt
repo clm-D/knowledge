@@ -1,0 +1,6 @@
+20 django.server 2018-09-20 11:03:13,208 "GET /app/index/ HTTP/1.1" 200 414
+20 django.server 2018-09-20 11:05:51,061 "GET /app/index/ HTTP/1.1" 200 414
+20 django.server 2018-09-20 11:11:31,369 "GET /app/index/ HTTP/1.1" 200 414
+20 django.server 2018-09-20 11:12:01,427 "GET /app/index/ HTTP/1.1" 200 414
+20 django.server 2018-09-20 11:31:50,283 "GET /app/index/ HTTP/1.1" 200 414
+20 django.server 2018-09-20 11:33:30,758 "GET /app/index/ HTTP/1.1" 200 414

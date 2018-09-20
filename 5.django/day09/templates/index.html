@@ -8,17 +8,41 @@
 
 <p>用户名：{{ user }}</p>
 
-<p>{{ perms_all.users }}</p>
+<p>所有:{{ perms.app }}</p>
 
-{% if perms_all.app.add_myuser %}
+{% if perms.app.add_myuser %}
 
 <p>添加用户</p>
 
 {% endif %}
+
+{% if perms.app.delete_myuser %}
+
 <p>删除用户</p>
+
+{% endif %}
+
+{% if perms.app.change_myuser %}
+
 <p>修改用户</p>
+
+{% endif %}
+{% if perms.app.change_myuser_username %}
+
 <p>修改用户名</p>
+
+{% endif %}
+{% if perms.app.change_myuser_password %}
+
 <p>修改用户密码</p>
+
+{% endif %}
+
+
+
+
+
+
 
 </body>
 </html>

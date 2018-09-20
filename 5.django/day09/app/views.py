@@ -1,9 +1,13 @@
+# import logging
+
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Permission, Group
 from django.http import HttpResponse
 from django.shortcuts import render
 
 from app.models import MyUser
+
+# logger = logging.getLogger('console')
 
 
 def create_user(request):
@@ -78,17 +82,19 @@ def user_permission(request):
         perms = user.groups.first().permissions.all().values('codename')
 
         # 方法2：得到权限集合
-        perms2 = user.get_group_permissions()
+        user.get_group_permissions()
 
         # 获取用户所有的权限
-        perms_all = user.get_all_permissions()
+        user.get_all_permissions()
 
-        return HttpResponse(perms2)
+        return HttpResponse(' ')
 
 
 @permission_required('app.change_myuser_username')
 def index(request):
     if request.method == 'GET':
+        # logging.info('index方法')
         # change_myuser_username
+        user = request.user
         # return HttpResponse('我是首页，我需要有修改用户名的权限才能访问')
         return render(request, 'index.html')
