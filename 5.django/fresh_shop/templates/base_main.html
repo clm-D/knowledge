@@ -1,0 +1,79 @@
+
+{% extends 'base.html' %}
+
+{% block css %}
+    {% load static %}
+	<link rel="stylesheet" type="text/css" href="{% static 'css/reset.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+{% endblock %}
+
+{% block js %}
+    {% load static %}
+	<script type="text/javascript" src="{% static 'js/jquery-1.12.4.min.js' %}"></script>
+{% endblock %}
+
+{% block header %}
+    	<div class="header_con">
+		<div class="header">
+			<div class="welcome fl">欢迎来到天天生鲜!</div>
+			<div class="fr">
+				<div class="login_info fl" id="login_info">
+					欢迎您：<em>X X</em>
+				</div>
+
+				<div class="login_btn fl" id="login_btn">
+					<a href="{% url 'users:login' %}">登录</a>
+					<span>|</span>
+					<a href="{% url 'users:register' %}">注册</a>
+				</div>
+				<div class="user_link fl">
+					<span>|</span>
+					<a href="{% url 'users:user_center_info' %}">用户中心</a>
+					<span>|</span>
+					<a href="{% url 'cart:my_cart' %}">我的购物车</a>
+					<span>|</span>
+					<a href="{% url 'users:user_center_order' %}">我的订单</a>
+				</div>
+
+				<div class="login_info fl" id="logout">
+					<span>|</span><a href="{% url 'users:logout' %}">安全退出</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		$.get('/users/login_change/', function(data){
+			if(data.code == '200'){
+				$('#login_info').removeClass('login_info')
+				$('#login_info').addClass('login_btn')
+
+				$('#login_btn').removeClass('login_btn')
+				$('#login_btn').addClass('login_info')
+
+				$('#logout').removeClass('login_info')
+				$('#logout').addClass('login_btn')
+
+				$('#login_info em').html(data.info.username)
+			}
+		})
+	</script>
+
+{% endblock %}
+
+
+{% block footer %}
+    <div class="footer">
+        <div class="foot_link">
+            <a href="#">关于我们</a>
+            <span>|</span>
+            <a href="#">联系我们</a>
+            <span>|</span>
+            <a href="#">招聘人才</a>
+            <span>|</span>
+            <a href="#">友情链接</a>
+        </div>
+        <p>CopyRight © 2016 xxx天天生鲜信息技术有限公司 All Rights Reserved</p>
+        <p>电话：010-****888    京ICP备*******8号</p>
+	</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+<!--{% block js %}-->
+    <!--{{ block.super }}-->
+    <!--{% load static %}-->
+    <!--<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>-->
+
+    <!--<script type="text/javascript">-->
+        <!--function create_shop(){-->
+            <!--var name = $('input[name="name"]').val()-->
+            <!--var goods_sn = $('input[name="goods_sn"]').val()-->
+            <!--var category = $('select[name="category"]').val()-->
+            <!--var goods_nums = $('input[name="goods_nums"]').val()-->
+            <!--var market_price = $('input[name="market_price"]').val()-->
+            <!--var shop_price = $('input[name="shop_price"]').val()-->
+            <!--var goods_brief = $('input[name="goods_brief"]').val()-->
+            <!--var goods_front_image = $('input[name="goods_front_image"]').val()-->
+
+            <!--var csrf = $('input[name="csrfmiddlewaretoken"]').val()-->
+            <!--$.ajax({-->
+                <!--url: '/goods/shop/',-->
+                <!--type: 'POST',-->
+                <!--dataType: 'json',-->
+                <!--data: {'name': name, 'goods_sn': goods_sn, 'category': category, 'goods_nums': goods_nums, 'market_price': market_price, 'shop_price': shop_price, 'goods_brief': goods_brief, 'goods_front_image': goods_front_image},-->
+                <!--headers:{'X-CSRFToken': csrf},-->
+                <!--success: function(data){-->
+                    <!--console.log(data);-->
+                    <!--alert('请求成功');-->
+                <!--},-->
+                <!--error:function(data){-->
+                    <!--console.log(goods_front_image);-->
+                    <!--console.log(data);-->
+                    <!--alert('请求失败');-->
+                <!--}-->
+            <!--})-->
+        <!--}-->
+    <!--</script>-->
+
+<!--{% endblock %}-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% block js %}
+    {{ block.super }}
+    {% load static %}
+    <script type="text/javascript">
+        function get_stus(){
+            <!--获取商品信息-->
+            $.ajax({
+                url: '/goods/shop/',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data){
+                    console.log(data)
+                    var results = data
+                    console.log(results)
+                    for(var i=0; i<results.length; i++){
+                        var c_tr = '<tr>
+                            <td class="center"><img src="/media/results[i]['goods_front_image'] " width="50" height="50" alt="" /></td>
+                            <td class="center">results[i]['name']</td>
+                            <td class="center">
+                                猪牛羊肉
+                            </td>
+                            <td class="center">results[i]['goods_sn']</td>
+                            <td class="center"><strong class="rmb_icon">results[i]['market_price']</strong></td>
+                            <td class="center"><strong class="rmb_icon">results[i]['shop_price']</strong></td>
+                            <td class="center">results[i]['goods_nums']</td>
+                            <td class="center">
+                                <a href="{% url 'goods:goods_desc' %}">results[i]['goods_brief']</a>
+                            </td>
+                            <td class="center">
+                                <a href="{% url 'goods:goods_detail' %}" title="编辑" class="link_icon">&#101;</a>
+                                <a onclick="" title="删除" class="link_icon">&#100;</a>
+                            </td>
+                        </tr>'
+                        $('.table').append(c_tr)
+                    }
+                },
+                error: function(data){
+                    alert('请求失败')
+                }
+            })
+    </script>
+
+{% endblock %}

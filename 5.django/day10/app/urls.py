@@ -11,6 +11,9 @@ router = SimpleRouter()
 router.register(r'^student', views.StudentView)
 
 urlpatterns = [
-
+    url(r'^index/', views.index, name='index'),
+    url(r'^add/', views.add, name='add'),
+    url(r'^delete/', views.add, name='delete'),
+    url(r'^update/', views.add, name='update'),
 ]
 urlpatterns += router.urls

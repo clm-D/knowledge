@@ -1,0 +1,6 @@
+
+django==1.11
+pymysql
+Pillow
+djangorestframework==3.4.6
+django-filter

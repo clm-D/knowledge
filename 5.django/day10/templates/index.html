@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript">
+
+        function get_stus(){
+            <!--获取学生信息-->
+            $.ajax({
+                url: '/app/student/',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data){
+                    console.log(data)
+                    var results = data
+                    console.log(results)
+                    for(var i=0; i<results.length; i++){
+                        var c_stu = '<p>id:' + results[i]['id'] + '  name: ' + results[i]['s_name'] + ' </p>'
+                        $('#content').append(c_stu)
+                    }
+                },
+                error: function(data){
+                    alert('请求失败')
+                }
+            })
+
+            <!--$.get('/app/student/', function(data){-->
+                <!--console.log(data);-->
+            <!--});-->
+        }
+
+    </script>
+</head>
+<body id="content">
+
+    <input type="button" value="获取学生信息" onclick="get_stus();">
+
+    <a href="{% url 'app:add' %}">添加学生信息</a>
+
+    <a href="{% url 'app:delete' %}">删除学生信息</a>
+
+    <a href="{% url 'app:update' %}">修改学生信息</a>
+
+</body>
+</html>

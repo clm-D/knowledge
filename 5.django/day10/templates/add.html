@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script>
+        function update_stu(){
+            var name = $('#name').val()
+            var age = $('#age').val()
+            var csrf = $('input[name="csrfmiddlewaretoken"]').val()
+            $.ajax({
+                url: '/app/student/',
+                type: 'POST',
+                dataType: 'json',
+                data: {'s_name': name, 's_age': age},
+                headers:{'X-CSRFToken': csrf},
+                success: function(data){
+                    console.log(data);
+                },
+                error:function(data){
+                    alert('请求失败');
+                }
+            })
+        }
+    </script>
+</head>
+<body>
+    {% csrf_token %}
+    <p>姓名：<input type="text" id="name"></p>
+    <p>年龄：<input type="text" id="age"></p>
+    <br>
+    <input type="button" value="提交" onclick="update_stu();">
+
+</body>
+</html>

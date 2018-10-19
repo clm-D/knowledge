@@ -43,6 +43,13 @@ def login(request):
             return render(request, 'login.html', {'msg': msg})
 
 
+def register(request):
+    if request.method == 'GET':
+        return render(request, 'register.html')
+    if request.method == 'POST':
+        Users.objects.create(username='222', password='123')
+
+
 @is_login
 def index(request):
     if request.method == 'GET':

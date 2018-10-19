@@ -1,4 +1,7 @@
 vnc:
+
+老王
+
 账号：administuator
 密码：wang135588
 
@@ -17,7 +20,7 @@ virtualenv
 
 4、创建虚拟环境
 进入存放虚拟环境的文件夹
-virtualen -p (python 版本的.exe文件的绝对路径) --no-site-package djenv5(虚拟环境名字)
+virtualenv -p (python 版本的.exe文件的绝对路径) --no-site-package djenv5(虚拟环境名字)
 进入 cd env/Scripts/djenv5 再activate
 退出 deactivate
 
