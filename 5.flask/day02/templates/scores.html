@@ -1,0 +1,27 @@
+
+{% extends 'base_main.html' %}
+
+{% block content %}
+    <!--宏定义：无参数情况-->
+    {% from 'functions.html' import hello %}
+    {{ hello() }}
+    <!--宏定义：有参情况-->
+    {% from 'functions.html' import say %}
+    {{ say('小明', '18', '男', 'address:火星') }}
+    <br>
+
+    {{ content_h2 | safe }}
+    {{ content_h2 | safe | length }}
+    {{ content_h2 | striptags | capitalize }}
+    <br>
+
+    <!--Jinja2中没有ifequal-->
+    {% for scores in stu_scores %}
+        <p {% if loop.first %} style="color:red;" {% endif %}>
+            序号：{{ loop.revindex }}
+            成绩：{{ scores }}
+            循环：{{ loop.first }}
+        </p>
+    {% endfor %}
+
+{% endblock %}

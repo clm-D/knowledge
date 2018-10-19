@@ -1,0 +1,287 @@
+
+今天的主要内容：paginate、一对多关系的模型和查询、多对多关系的模型和查询、
+	lazy、debugtoolbar、邮件发送
+
+
+一、分页paginate
+
+items:当前页面中的记录
+page:当前页数
+prev_num:上一页的页数
+next_num:下一页的页数
+has_next:如果有下一页，返回True
+has_prev:如果有上一页，返回True
+pages:总页数
+iter_pages():页码
+
+
+views.py中的内容
+# 实现分页
+@user_blueprint.route('/paginate/', methods=['GET', 'POST'])
+def stu_page():
+    page = int(request.args.get('page', 1))
+    # 1.offset+limit
+    stus = Students.query.offset((page - 1) * 2).limit(2)
+    # 2.切片
+    stus = Students.query.all()[((page - 1) * 2):(page * 2)]
+    # 3.sql
+    sql = 'select * from students limit %s,%s' % (((page - 1) * 2), (page * 2))
+    stus = db.session.execute(sql)
+    # 4.paginate()方法
+    paginate = Students.query.paginate(page, 2)
+    stus = paginate.items
+    return render_template('index.html', stus=stus, paginate=paginate)
+
+
+页面内容
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <table>
+        <thead>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>年龄</th>
+        </thead>
+        <tbody>
+            {% for stu in stus %}
+                <tr>
+                    <td>{{ stu.id }}</td>
+                    <td>{{ stu.s_name }}</td>
+                    <td>{{ stu.s_age }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <p>
+        当前{{ paginate.page }}页
+
+        总页数：{{ paginate.pages }}页
+
+        {% if paginate.has_prev %}
+            <a href="{{ url_for('app.stu_page') }}?page={{ paginate.prev_num }}">上一页 </a>
+        {% endif %}
+
+        页码：{% for i in paginate.iter_pages() %}
+            <a href="{{ url_for('app.stu_page') }}?page={{ i }}">{{ i }}</a>
+        {% endfor %}
+
+        {% if paginate.has_next %}
+            <a href="{{ url_for('app.stu_page') }}?page={{ paginate.next_num }}">下一页 </a>
+        {% endif %}
+    </p>
+</body>
+</html>
+
+
+
+二、一对多关系的模型和查询
+
+一对一模型就是在s_g中添加一个unique=True就是一对一模型了
+
+models中的内容：重点：Students:s_g = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=True)
+			Grade:students = db.relationship('Students', backref='grade')
+
+class Students(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    s_name = db.Column(db.String(10), unique=False, nullable=False)
+    s_age = db.Column(db.Integer, default=18)
+    s_g = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=True)
+
+    __tablename__ = 'students'
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+
+class Grade(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    g_name = db.Column(db.String(30), unique=False)
+    students = db.relationship('Students', backref='grade')
+
+    __tablename__ = 'grade'
+
+
+
+一对多模型数据的操作，views中
+
+# 数据对象的创建
+
+@user_blueprint.route('/create_grade/', methods=['GET', 'POST'])
+def create_grade():
+    names = ['java', 'python', 'html5', 'php', 'c']
+    grade_list = []
+    for name in names:
+        grade = Grade()
+        grade.g_name = name
+        grade_list.append(grade)
+    db.session.add_all(grade_list)
+    db.session.commit()
+    return '班级添加成功'
+
+
+@user_blueprint.route('/rel_stu_grade/')
+def rel_stu_grade():
+    stus_ids = [2, 3, 4]
+    for id in stus_ids:
+        stu = Students.query.get(id)
+        # 在flask中， stu.s_g获取的值为int类型
+        # 在django中， stu.s_g获取的是对象，stu.s_g_id获取到的int类型。
+        stu.s_g = 1
+        stu.save()
+    return '关联学生和班级'
+
+
+
+# 通过一对多关联关系相互查询
+
+@user_blueprint.route('/sel_stu_by_grade/')
+def sel_stu_by_grade():
+    # 通过班级查找学生
+    grade = Grade.query.filter(Grade.g_name == 'python').first()
+    # 获取到班级对应的学生信息
+    stus = grade.students
+    return '通过班级查找学生成功'
+
+
+@user_blueprint.route('/sel_grade_by_stu/')
+def sel_grade_by_stu():
+    # 通过学生查找班级
+    stu = Students.query.get(6)
+    # 获取到学生对应的班级信息
+    grade = stu.grade
+    return '通过学生查找班级成功'
+
+
+
+三、多对多模型
+
+
+模型：models中：重点：s_c 和 students = db.relationship('Students', secondary=s_c, backref='cou', lazy='dynamic')
+
+
+
+s_c = db.Table('s_c',
+               db.Column('s_id', db.Integer, db.ForeignKey('students.id'), primary_key=True),
+               db.Column('c_id', db.Integer, db.ForeignKey('course.id'), primary_key=True)
+               )
+
+
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    c_name = db.Column(db.String(20), unique=False)
+    students = db.relationship('Students', secondary=s_c, backref='cou', lazy='dynamic')
+
+    __tablename__ = 'course'
+
+
+# 多对多关联关系：views中
+# 创建数据
+@user_blueprint.route('/create_course/')
+def create_course():
+    names = ['语文', '数学', '英语', '物理']
+    for name in names:
+        course = Course()
+        course.c_name = name
+        db.session.add(course)
+    db.session.commit()
+    return '添加成功'
+
+
+@user_blueprint.route('/add_stu_cou/')
+def add_stu_cou():
+    stu = Students.query.get(1)
+    # 学生对象查找课程信息， stu.cou
+    cou1 = Course.query.get(1)
+    cou2 = Course.query.get(2)
+    cou3 = Course.query.get(3)
+    cou4 = Course.query.get(4)
+    # 绑定学生和课程的关联关系
+    stu.cou.append(cou1)
+    stu.cou.append(cou2)
+    stu.cou.append(cou3)
+    stu.cou.append(cou4)
+
+    stu.save()
+    return '小明选课成功'
+
+
+
+四、lazy、debugtoolbar、邮件发送
+
+lazy:决定了SQLAlchemy什么时候从数据库中加载数据：
+
+lazy='select'：默认的，就是访问到属性的时候，就会全部加载改属性的数据
+
+lazy='dynamic'：访问属性时，并没有加载数据而是返回一个query对象（查询语句）,需要执行相应方法才可以获取对象
+
+
+
+debugtoolbar:页面调试工具，需要安装flask-debugtoolbar
+
+配置：
+
+from flask_debugtoolbar import DebugToolbarExtension
+
+app.config['SECRET_KEY'] = 'secret_key'
+
+# 开启debug模式
+app.debug = True
+
+# 初始化debugtoolbar和app
+toolbar = DebugToolbarExtension(app=app)
+
+
+配置好了以后打开有数据返回的页面就可以在页面中进行调试
+
+
+
+邮件发送：
+
+首先需要开启邮箱的客户端授权码
+
+然后时配置和功能的实现：
+
+from flask import Flask
+from flask_mail import Mail, Message
+
+app = Flask(__name__)
+
+app.config["MAIL_SERVER"] = "smtp.163.com"
+app.config["MAIL_PORT"] = 465  # 设置邮箱端口为465，默认为25，由于阿里云禁止了25端口，所以需要修改
+app.config["MAIL_USE_SSL"] = True  # 163邮箱需要开启SSL
+app.config["MAIL_USERNAME"] = "wanghaifei36@163.com"
+app.config["MAIL_PASSWORD"] = "wanghai135588"
+
+mail = Mail(app)
+
+
+@app.route("/send_mail")
+def send_mail():
+    """
+    发送邮件， sender为发送者邮箱， recipients为接受者邮箱
+    """
+    message = Message("测试邮件标题122", sender=app.config["MAIL_USERNAME"], recipients=["779598160@qq.com"])
+    message.body = "测试邮件的内容122"
+
+    send_email(message)
+
+    return "发送成功"
+
+
+def send_email(msg):
+    with app.app_context():
+        mail.send(msg)
+
+
+if __name__ == "__main__":
+    app.run(port=8080)
+
+
+

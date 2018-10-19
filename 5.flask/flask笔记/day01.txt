@@ -1,0 +1,209 @@
+
+flask学习day01主要内容：上午：安装和配置flask的环境virtualenv， 创建一个简单的flask项目
+			下午：flask蓝图、flask请求与响应/错误处理、session
+
+
+一、
+首先先创建一个flaskenv5的虚拟环境
+F:\Python\env3.6>virtualenv --no-site-packages -p C:\Users
+	\clm\AppData\Local\Programs\Python\Python36-32\python.exe flaskenv5
+
+然后在进入flaskenv5/Script中
+启动虚拟环境activate，接下来下载flask
+pip install flask
+虚拟环境就创建好了
+
+
+二、
+在项目工程下创建个5.flask的文件夹，并在该文件夹下创建一个day01的文件夹
+
+然后在pycharm中打开day01的文件夹并将其环境设置为flaskenv5的环境（在setting中设置）
+
+接下来就是创建一个最小的应用
+在day01中创建一个hello.py，并在里面写如下代码：
+
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return 'Hello World!'
+
+if __name__ == '__main__':
+    app.run()
+
+
+然后直接运行就行了
+
+
+
+接下来是修改ip,post和debug
+
+方法一(不建议使用，不可能每次换端口都修改代码)：直接修改app.run()
+# 修改启动的ip和端口，debug模式
+# app.run(host='0.0.0.0', port=8080, debug=True)
+
+方法二：使用flask_script来实现：使用方法类似于django
+from flask import Flask
+from flask_script import Manager
+
+app = Flask(__name__)
+# 将flask对象交给Manager管理，并且启动方式修改为manager.run()
+manager = Manager(app=app)
+
+
+@app.route('/')
+def hello_worls():
+    return 'Hello World!'
+
+
+if __name__ == '__main__':
+    # pyhton xxx.py runserver -h 0.0.0.0 -p 8080 -d
+    manager.run()
+
+然后去修改python中的run为:runserver -h 0.0.0.0 -p 8080 -d
+就可以直接运行了
+
+
+路由匹配规则：
+
+# 路由匹配规则
+# 1.<id>: 默认接收的类型为str
+# 2.<string:id>: 指定id的类型为字符串str
+# 3.<int:id>: 指定id的类型为整型int
+# 4.<float:id>: 指定id的类型为浮点数float
+# 5.<path:upath>: 指定接收的path为URL中的路径
+
+
+@app.route('/get_id/<id>/')
+def get_id(id):
+    # 匹配str类型的id值
+    return 'id: %s' % id
+
+
+@app.route('/get_int_id/<int:id>/')
+def get_int_id(id):
+    # 匹配int类型的id值
+    return 'id: %d' % id
+
+
+@app.route('/get_float_id/<float:id>/')
+def get_float_id(id):
+    # 匹配float类型的值，不能匹配int类型的
+    return 'id: %.2f' % id
+
+
+@app.route('/get_path/<path:upath>/')
+def get_path(upath):
+    # 匹配URL路径,匹配/get_path/后面的所有
+    return 'path: %s' % upath
+
+
+
+
+三、蓝图flask_blueprint
+之前的mvc模块（及代码）全都在一个hello.py文件中，现在要将其拆分为多个模块，
+蓝图就是实现模块化的应用
+
+安装：pip install flask_blueprint
+
+实例化蓝图应用，在app.views中创建蓝图
+
+# 第一步，创建蓝图blue并使用其去管理路由（别名app）
+blue = Blueprint('app', __name__)
+
+然后再hello.py中注册蓝图
+
+# 第二步，绑定蓝图blue和app的关系
+app.register_blueprint(blueprint=blue, url_prefix='/app')
+
+使用蓝图：将之前的@app.router('/')修改为@ blue.router（ '/'）
+
+@blue.route('/', methods=['GET', 'POST'])
+def hello():
+    # 视图函数
+    return 'Hello World'
+
+
+
+定义跳转
+
+@blue.route('/redirect/')
+def redirect_hello():
+    # 实现跳转
+    # 1.硬编码URL
+    # 2.反向解析redirect(url_for('蓝图别名.跳转的函数名'))
+    # return redirect('/app/')
+    # return redirect(url_for('app.hello_world'))
+    return redirect(url_for('app.get_id', id=5))
+
+
+
+导入（跳转使用，以及下面的）
+from flask import Blueprint, redirect, url_for,\
+    request, make_response, render_template, abort,\
+    session
+
+四、flask的请求响应和错误处理
+请求：
+
+@blue.route('/request/', methods=['GET', 'POST', 'PUT'])
+def get_request():
+    # 请求上下文 request
+    # 获取GET请求传递的参数：request.args.get(key)/request.args.getlist(key)
+    # 获取POST、PUT、PATCH、DELETE请求传递的参数：request.form.get(key)/request.form.getlist(key)
+    # 判断HTTP请求方式： request.method
+    pass
+
+响应：
+
+@blue.route('/response/', methods=['GET'])
+def get_response():
+    # 创建响应
+    # res = make_response('人生苦短，我用Python', 200)
+    # 响应绑定cookie, set_cookie(key, value, max_age, explres)
+    # 删除cookie, delete_cookie(key)
+    res_index = render_template('index.html')
+    res = make_response(res_index, 200)
+    return res
+
+错误处理
+
+@blue.route('/index/', methods=['GET'])
+def index():
+    a = int(request.args.get('a'))
+    b = int(request.args.get('b'))
+    try:
+        a/b
+    except Exception as e:
+        print(e)
+        # 抛出错误
+        abort(500)
+    return render_template('index.html')
+
+
+@blue.errorhandler(500)
+def error500(exception):
+    return '捕捉异常，错误信息为：%s' % exception
+
+
+五、session：实现登录
+
+@blue.route('/login/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    if request.method == 'POST':
+        # 获取页面传递的参数
+        username = request.form.get('username')
+        password = request.form.get('password')
+        # 验证用户名和密码是否正确
+        if username == 'clm' and password == '123456':
+            # 验证通过, 向session中存入登录成功的标识符
+            session['login_status'] = 1
+            return redirect(url_for('app.get_response'))
+        else:
+            return render_template('login.html')
+
+

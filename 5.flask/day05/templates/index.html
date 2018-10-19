@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    首页
+{% endblock %}
+
+{% block content %}
+
+    <h2>wo shi shou ye</h2>
+
+    <a href="{{ url_for('app.logout') }}">注销</a>
+
+    <img src="/static/media/{{ current_user.icons }}">
+
+    <form action="" method="post" enctype="multipart/form-data">
+        <p>头像：<input type="file" name="icons">
+        <input type="submit" value="上传"></p>
+    </form>
+
+    {% if error %}
+        {{ error }}
+    {% endif %}
+
+
+{% endblock %}

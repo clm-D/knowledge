@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <table>
+        <thead>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>年龄</th>
+        </thead>
+        <tbody>
+            {% for stu in stus %}
+                <tr>
+                    <td>{{ stu.id }}</td>
+                    <td>{{ stu.s_name }}</td>
+                    <td>{{ stu.s_age }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <p>
+        当前{{ paginate.page }}页
+
+        总页数：{{ paginate.pages }}页
+
+        {% if paginate.has_prev %}
+            <a href="{{ url_for('app.stu_page') }}?page={{ paginate.prev_num }}">上一页 </a>
+        {% endif %}
+
+        页码：{% for i in paginate.iter_pages() %}
+            <a href="{{ url_for('app.stu_page') }}?page={{ i }}">{{ i }}</a>
+        {% endfor %}
+
+        {% if paginate.has_next %}
+            <a href="{{ url_for('app.stu_page') }}?page={{ paginate.next_num }}">下一页 </a>
+        {% endif %}
+    </p>
+</body>
+</html>

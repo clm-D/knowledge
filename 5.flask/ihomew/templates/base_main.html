@@ -1,0 +1,21 @@
+
+{% extends 'base.html' %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='plugins/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='plugins/font-awesome/css/font-awesome.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/reset.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='plugins/swiper/css/swiper.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='plugins/bootstrap-datepicker/css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/ihome/main.css') }}" rel="stylesheet">
+{% endblock %}
+
+
+{% block js %}
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/swiper/js/swiper.jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/bootstrap-datepicker/locales/bootstrap-datepicker.zh-CN.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/template.js') }}"></script>
+{% endblock %}

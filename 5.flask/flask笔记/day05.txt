@@ -1,0 +1,257 @@
+
+今日内容：表单验证：flask-wtf、登录注销：flask-login、图片文件的上传展示。
+
+
+
+一、注册表单验证：
+
+flask中的表单验证有flask-wtf插件：
+
+1、创建一个forms.py文件来进行验证和页面内容的创建
+
+from flask_wtf import FlaskForm
+
+from wtforms import StringField, SubmitField
+
+from wtforms.validators import DataRequired, EqualTo, ValidationError
+
+from app.modles import User
+
+
+class UserRegisterForm(FlaskForm):
+    # 定义用户名和密码都是必填项
+    username = StringField('账号', validators=[DataRequired()])
+    password = StringField('密码', validators=[DataRequired()])
+    password2 = StringField('确认密码', validators=[DataRequired(), EqualTo('password', '两次密码不一致')])
+
+    submit = SubmitField('注册')
+
+    def validators_username(self, field):
+        # 验证用户名是否重复
+        if User.query.filter(User.username == field.data).first():
+            raise ValidationError('账号已存在')
+
+        # 验证用户名长度不能少于4个字符
+        if len(field.data) < 4:
+            raise ValidationError('注册用户名长度不能少于4个字符')
+
+
+2、写注册的控制：先完成 GET 请求的功能，将form中的东西传到页面中，POST下面在写
+
+@blue.route('/register/', methods=['GET', 'POST'])
+def register():
+    # 表单对象
+    form = UserRegisterForm()
+    if request.method == 'GET':
+
+        return render_template('register.html', form=form)
+
+
+3、写页面内容：使用form来创建
+
+{% block content %}
+
+    <form action="" method="post">
+        {{ form.csrf_token }}
+
+        {{ form.username.label }}: {{ form.username }}<br><br>
+        {{ form.password.label }}: {{ form.password }}<br><br>
+        {{ form.password2.label }}: {{ form.password2 }}<br><br>
+
+        {{ form.submit }}
+
+    </form>
+
+    {% if form.errors %}
+        {{ form.errors.password.0 }}
+        {{ form.errors }}
+    {% endif %}
+
+{% endblock %}
+
+
+4、实现 POST请求，进行数据的校验和存储
+
+@blue.route('/register/', methods=['GET', 'POST'])
+def register():
+    # 表单对象
+    form = UserRegisterForm()
+    if request.method == 'GET':
+
+        return render_template('register.html', form=form)
+
+    if request.method == 'POST':
+        # 验证提交的字段信息
+        if form.validate_on_submit():
+            username = form.username.data
+            password = form.password.data
+            # 实现注册，保存用户信息到User模型中
+            user = User()
+            user.username = username
+            user.password = generate_password_hash(password)
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for('app.login'))
+        else:
+            # 验证失败， form.errors中存在错误信息
+            return render_template('register.html', form=form)
+
+
+
+二、登录注销：flask-login
+
+登录的页面和校验类似第一点进行创建
+
+使用flask-login实现登录和注销要使用到from flask_login import LoginManager,
+		login_required, login_user, logout_user，current_user
+
+回调函数：在访问任何一个路由地址时也会被调用。
+	在这里的作用时：回调函数实现的功能是向会话上下文session中存储最为中间的键值对，key为user_id， value为当前登录用户的ID值。
+
+1、回调函数， 及登录login功能的实现
+
+# 获取登录管理对象
+login_manager = LoginManager()
+
+# 回调
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
+
+@blue.route('/login/', methods=['GET', 'POST'])
+def login():
+    form = UserLoginForm()
+    if request.method == 'GET':
+        return render_template('login.html', form=form)
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            username = form.username.data
+            password = form.password.data
+            user = User.query.filter(User.username == username).first()
+            # 验证用户是否存在
+            if user:
+                # 验证密码
+                if check_password_hash(user.password, password):
+                    # 密码正确
+                    # 实现登录, django中auth.login(request, user)
+                    login_user(user)
+                    return redirect(url_for('app.index'))
+                else:
+                    error = '密码错误'
+                    return render_template('login.html', error=error, form=form)
+            else:
+                # 账号不存在
+                error = '账号不存在！'
+                return render_template('login.html', error=error, form=form)
+        else:
+            return render_template('login.html', form=form)
+
+
+2、对flask-login的启动文件进行配置
+
+from user.views import login_manager
+
+app.config['SECRET_KEY'] = 'secret_key'
+
+# 没有登录跳转地址
+login_manager.login_view = 'app.login'
+
+
+3、注销功能的实现：
+
+login_required()：登录校验的装饰器
+
+@blue.route('/logout/')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('app.login'))
+
+
+
+三、图片文件的上传展示
+
+1、models中添加一个图片的字段
+
+icons = db.Column(db.String(130), nullable=True)
+
+
+2、获取到文件的存储路径及其它路径
+
+创建一个utils文件夹和settings.py文件来实现
+
+import os
+
+# 基础路径
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# static路径
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+
+# templates路径
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+
+# 上传路径
+UPLOAD_DIR = os.path.join(os.path.join(STATIC_DIR, 'media'), 'upload')
+
+
+3、图片上传功能的实现
+
+@blue.route('/index/', methods=['GET', 'POST'])
+@login_required
+@blue.before_request
+def index():
+    if request.method == 'GET':
+        return render_template('index.html')
+
+    if request.method == 'POST':
+        # 获取图片
+        icons = request.files.get('icons')
+        # 保存save(path)到本地/static/media/upload
+
+        # 作业：
+        # 1.只保存图片
+        # 2.中间件，钩子
+        # @blue.before_request
+        # @blue.after_request
+        # @blue.teardown_request
+
+        str = r'.+\.(jpg|gif|png|bmp)'
+        match1 = re.match(str, icons.filename)
+
+        if match1:
+            file_path = os.path.join(UPLOAD_DIR, icons.filename)
+            icons.save(file_path)
+            # 保存到数据库中
+            user = current_user
+            user.icons = os.path.join('upload', icons.filename)
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for('app.index'))
+        else:
+            error = '请上传图片格式的文件'
+            return render_template('index.html', error=error)
+
+4、页面的内容
+
+{% block content %}
+
+    <h2>wo shi shou ye</h2>
+
+    <a href="{{ url_for('app.logout') }}">注销</a>
+
+    <img src="/static/media/{{ current_user.icons }}">
+
+    <form action="" method="post" enctype="multipart/form-data">
+        <p>头像：<input type="file" name="icons">
+        <input type="submit" value="上传"></p>
+    </form>
+
+    {% if error %}
+        {{ error }}
+    {% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,26 @@
+
+{% extends 'base.html' %}
+
+{% block title %}
+    注册
+{% endblock %}
+
+{% block content %}
+
+    <form action="" method="post">
+        {{ form.csrf_token }}
+
+        {{ form.username.label }}: {{ form.username }}<br><br>
+        {{ form.password.label }}: {{ form.password }}<br><br>
+        {{ form.password2.label }}: {{ form.password2 }}<br><br>
+
+        {{ form.submit }}
+
+    </form>
+
+    {% if form.errors %}
+        {{ form.errors.password.0 }}
+        {{ form.errors }}
+    {% endif %}
+
+{% endblock %}
